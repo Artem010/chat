@@ -57,8 +57,11 @@
       socket.emit('pushFiveMsgs');
       $form.submit(function(e) {
 				e.preventDefault();
-        socket.emit('sendMsg', {msg: $msgText.val(), name:$name.val(), color: color});
-        $msgText.val('');
+        if($name.val() != '' && $msgText.val() != ''){
+          socket.emit('sendMsg', {msg: $msgText.val(), name:$name.val(), color: color});
+          $msgText.val('');
+        }
+
       });
 
 
