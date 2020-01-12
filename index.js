@@ -5,7 +5,7 @@ var mysql = require('mysql2');
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 
-var connection = mysql.createConnection({
+var connection = mysql.createPool({
   host: "remotemysql.com",
   user: "hmnwklXmKo",
   password: "C5DYSNcZIL",
@@ -16,26 +16,25 @@ var connections = [];
 
 function connectBD() {
 
-  connection.connect(function(err){
-    if (err) return console.error("Ошибка: " + err.message);
-    console.log("Подключение к серверу MySQL успешно установлено");
-  });
+  // connection.connect(function(err){
+  //   if (err) return console.error("Ошибка: " + err.message);
+  //   console.log("Подключение к серверу MySQL успешно установлено");
+  // });
 }
 function disconnectBD() {
-  connection.end(function(err) {
-    if (err) {
-      return console.log("Ошибка: " + err.message);
-    }
-    console.log("Подключение закрыто");
-  });
+  // connection.end(function(err) {
+  //   if (err) {
+  //     return console.log("Ошибка: " + err.message);
+  //   }
+  //   console.log("Подключение закрыто");
+  // });
 }
 
 server.listen(3000);
-connectBD();
+
 
 
 function addMsgDB(name, msg) {
-
   var id ='F';
   var color ='';
   let sqlSELECT = "SELECT * FROM users WHERE name=?";
@@ -50,17 +49,19 @@ function addMsgDB(name, msg) {
       if (err) return console.log('ОШИБККА: ',err);
       console.log("Added msg");
     });
-
   });
+
 
 }
 
 function regUserDB(name, color) {
+
   let sqlINSERT = "INSERT INTO users(name, password, color) VALUES (?, ?, ?)";
   connection.query(sqlINSERT, [name, '0', color], function (err, result) {
     if (err) return console.log('ОШИБККА: ',err);
     console.log("User registered");
   });
+
 }
 
 function loginUserDB() {
@@ -74,6 +75,7 @@ function loginUserDB() {
 }
 
 function allMsgDB() {
+
   let sqlSELECT = "SELECT * FROM messeges";
   connection.query(sqlSELECT, function (err, result) {
     if (err) return console.log('ОШИБККА: ',err);
@@ -114,6 +116,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('pushFiveMsgs', function(data) {
+
     let m = [];
     let sqlSELECT = "SELECT * FROM messeges ORDER BY id DESC LIMIT 15";
     connection.query(sqlSELECT, function (err, result) {
