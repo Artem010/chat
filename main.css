@@ -1,0 +1,13 @@
+#allMsg{
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  /* overflow-y: scroll; */
+  /* height: 95vh;
+  width: 90vw; */
+}
+#msgForm{
+  display: flex;
+}
+#msgText{
+  /* width: 42vw; */
+}

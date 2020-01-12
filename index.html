@@ -5,77 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="main.css">
   <title>Chat by Artem</title>
 </head>
 <body>
-  <div class="container">
-    <div class="py-5" ></div>
-    <div class="row">
-      <div class="col-6">
+  <div class="container main">
+    <!-- <div class="py-5" ></div> -->
 
-        <form id="msgForm">
-          <input placeholder="Your name" id="name" class="form-control" type="text">
-          <input placeholder="Your messege"id="msgText" type="te" class="form-control" >
-          <button type="submit" class="btn btn-danger" value="Send">Send</button>
-        </form>
-
-      </div>
-      <div class="col-6">
-        <h4>Messeges</h4>
-        <div style="overflow-y: scroll; height: 450px;" id="allMsg"></div>
-      </div>
+    <div id="login" class="row">
+      <input autocomplete="off" placeholder="Your name" id="name" class="form-control" type="text">
+      <button id="loginBtn" type="button" class="btn btn-danger" value="Send">Send</button>
     </div>
+
+    <div id="mainContainer" class="row">
+    <div class="col-12">
+      <nav id="allMsg"></nav>
+
+      <form id="msgForm">
+        <input autocomplete="off" placeholder="Your messege" id="msgText" type="te" class="form-control" >
+        <button type="submit" class="btn btn-danger" value="Send">Send</button>
+      </form>
+    </div>
+    </div>
+
   </div>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    $('#mainContainer').hide();
+    var name;
     function random (){
       return Math.floor(Math.random() * (255- 0) + 0);
     }
 
 
-
     var color = 'rgba('+random()+', '+random()+', '+random()+', 0.5)';
-    var ip;
-    $.getJSON('https://api.ipify.org?format=json', data => {
-      ip = data.ip;
-      console.log(data.ip);
-    });
-
-
-
+    // var ip;
+    // $.getJSON('https://api.ipify.org?format=json', data => {
+    //   ip = data.ip;
+    //   console.log(data.ip);
+    // });
     $(function(){
+
       var socket = io.connect();
 
+      var $loginBtn = $("#loginBtn");
       var $form = $("#msgForm");
       var $name = $("#name");
       var $msgText = $("#msgText");
       var $allMsg = $("#allMsg");
 
+      function scrollButtom() {
+        $("#allMsg").stop().animate({ scrollTop: $("#allMsg")[0].scrollHeight}, 1000);
+      }
 
-      socket.emit('pushFiveMsgs');
+
+      $loginBtn.on('click', function () {
+        if($('#name').val() != ''){
+          socket.emit('pushFiveMsgs');
+          name = $('#name').val();
+          $('#login').hide();
+          $('#mainContainer').show();
+          $msgText.focus();
+          socket.emit('reg', {name:name, color:color });
+        }
+      });
+
       $form.submit(function(e) {
 				e.preventDefault();
-        if($name.val() != '' && $msgText.val() != ''){
+        if($msgText.val() != ''){
           socket.emit('sendMsg', {msg: $msgText.val(), name:$name.val(), color: color});
           $msgText.val('');
         }
 
       });
 
-
-
-
       socket.on('addMsg', function(data) {
         $allMsg.append("<div style='background-color:"+data.color+"' class='alert'><b>"+data.name+"</b>: "+data.msg+"</div>");
+        scrollButtom();
+      });
+
+      socket.on('cnctMsg', function(data) {
+        $allMsg.append("<div class='alert'><b></b>: connection/div>");
       });
 
       socket.on('PFM', function(data) {
         data.forEach(function (entery) {
-          $allMsg.append("<div style='background-color:"+entery.color+"' class='alert'><b>"+entery.name+"</b>: "+entery.msg+"</div>");
+          $allMsg.append("<p style='background-color:"+entery.color+"' class='alert'><b>"+entery.name+"</b>: "+entery.msg+"</p>");
         });
+        scrollButtom();
       });
+
+
+
     });
   </script>
 </body>
