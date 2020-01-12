@@ -45,7 +45,7 @@ function addMsgDB(name, msg) {
     id = result[0].id;
     color = result[0].color;
 
-    let sqlINSERT = "INSERT INTO Messeges(id_name,name,messege,color) VALUES(?,?,?,?)";
+    let sqlINSERT = "INSERT INTO messeges(id_name,name,messege,color) VALUES(?,?,?,?)";
     connection.query(sqlINSERT, [id,name,msg,color], function (err, result) {
       if (err) return console.log('ОШИБККА: ',err);
       console.log("Added msg");
