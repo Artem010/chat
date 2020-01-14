@@ -1,6 +1,14 @@
 var express = require ('express');
+var session = require('express-session');
+
 var app = express();
 var mysql = require('mysql2');
+const promise = require('promise');
+
+
+var random = require("random");
+
+
 
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
@@ -14,23 +22,41 @@ var connection = mysql.createPool({
 var msgs=[];
 var connections = [];
 
-function connectBD() {
-
-  // connection.connect(function(err){
-  //   if (err) return console.error("Ошибка: " + err.message);
-  //   console.log("Подключение к серверу MySQL успешно установлено");
-  // });
-}
-function disconnectBD() {
-  // connection.end(function(err) {
-  //   if (err) {
-  //     return console.log("Ошибка: " + err.message);
-  //   }
-  //   console.log("Подключение закрыто");
-  // });
-}
 
 server.listen(3000);
+
+
+app.use(session({resave: true, saveUninitialized: true, secret: 'XCR3rsasa%RDHHH', cookie: { maxAge: 60000 }}));
+
+
+var sessionData
+// app.get('/',function(req,res){
+//   sessionData = req.session;
+//   sessionData.user = {};
+//   sessionData.user.username = 'Artem';
+//   sessionData.user.salary = random.int(55, 956);
+//    console.log("Setting session data:username=%s and salary=%s", sessionData.user.username, sessionData.user.salary)
+//
+//  // res.end('Saved session and salary : ' + sessionData.username);
+//  // res.json(sessionData.user)
+// });
+
+// app.get('/set_session',function(req,res){
+//   sessionData = req.session;
+//   sessionData.user = {};
+//   let username = "adam";
+//   sessionData.user.username = username;
+//   sessionData.user.salary = random.int(55, 956);
+//    console.log("Setting session data:username=%s and salary=%s", username, sessionData.user.salary)
+//
+//  // res.end('Saved session and salary : ' + sessionData.username);
+//  res.json(sessionData.user)
+// });
+
+
+
+
+
 
 
 
@@ -54,10 +80,10 @@ function addMsgDB(name, msg) {
 
 }
 
-function regUserDB(name, color) {
+function regUserDB(name, password, color) {
 
   let sqlINSERT = "INSERT INTO users(name, password, color) VALUES (?, ?, ?)";
-  connection.query(sqlINSERT, [name, '0', color], function (err, result) {
+  connection.query(sqlINSERT, [name, password, color], function (err, result) {
     if (err) return console.log('ОШИБККА: ',err);
     console.log("User registered");
   });
@@ -90,13 +116,76 @@ function allMsgDB() {
   });
 }
 
+function auth(name, pass) {
+  let sqlSELECT = "SELECT * FROM users WHERE name=? AND password=?";
+  connection.query(sqlSELECT, [name, pass], function (err, result) {
+    if (err) return console.log('ОШИБККА: ',err);
+    console.log(result);
+
+
+  });
+}
+
+async function regDB (name, pass) {
+
+  try {
+    let sqlSELECT = "SELECT * FROM users WHERE name=? AND password=?";
+
+    let res = 'lox';
+    res = await connection.execute(sqlSELECT, [name, pass], async (err, result) => {
+      console.log('result=', result);
+      return await result;
+    });
+    console.log('res=',res);
+
+    // if(res == 0){
+    //   // regUserDB(name, '0000')
+    //   // return console.log('Ok');
+    // }
+    // else{
+    //   return console.log('Not empty');
+    // }
+
+
+  } catch (e) {
+    return console.log('EROOOOOR',e);;
+  }
+
+
+}
+
 app.get('/', function(requset, respons) {
   respons.sendFile(__dirname + '/index.html');
+
+  console.log('start APPGET = ',sessionData);
+  if (requset.session.user) {
+    console.log("LOGIN session data:username=%s and password=%s and color=%s", sessionData.user.username, sessionData.user.password, sessionData.user.color );
+    return respons.redirect('/chatMain.html');
+  }
+  else{
+    sessionData = requset.session;
+
+  }
+
 });
+
+
+
 app.get('/main.css', function(requset, respons) {
   respons.sendFile(__dirname + '/main.css');
 });
 
+app.get('/logout', function(requset, respons) {
+  console.log('logout');
+  // if (requset.session.user) {
+   delete requset.session.user;
+   return respons.redirect('/');
+  // }
+});
+
+app.get('/chatMain.html', function(requset, respons) {
+  respons.sendFile(__dirname + '/chatMain.html');
+});
 
 
 io.sockets.on('connection', function(socket) {
@@ -121,7 +210,6 @@ io.sockets.on('connection', function(socket) {
     let sqlSELECT = "SELECT * FROM messeges ORDER BY id DESC LIMIT 15";
     connection.query(sqlSELECT, function (err, result) {
       if (err) return console.log('ОШИБККА: ',err);
-      // console.log(result);
 
       for (let i = 0; i < result.length; i++) {
          m.unshift({
@@ -131,14 +219,62 @@ io.sockets.on('connection', function(socket) {
         })
       }
 
-      console.log( m);
+      // console.log( m);
       socket.emit('PFM',  m);
     });
 
   });
 
-  socket.on('reg', function(data) {
-      console.log(data);
-      regUserDB(data.name, data.color);
+
+  socket.on('regCheck', async function(data) {
+
+    try {
+      let sqlSELECT = "SELECT * FROM users WHERE name=? ";
+      connection.query(sqlSELECT, data.name, (err, result) => {
+
+      if(result == ''){
+        regUserDB(data.name, data.password, data.color);
+        console.log('Ok');
+        return socket.emit('successfulReg');
+      }
+      else return socket.emit('errorReg');
+      });
+
+    }catch (e) {
+      return console.log('EROOOOOR-REG',e);;
+    }
+
   });
+
+  socket.on('login', async function (data) {
+    try {
+      let sqlSELECT = "SELECT * FROM users WHERE name=? AND password=?";
+      connection.query(sqlSELECT, [data.name, data.password], (err, result) => {
+      console.log(result);
+      if(result != ''){
+        if (result[0].name == data.name && result[0].password == data.password){
+          console.log('User is Login!');
+          // console.log(sessionData);
+          sessionData.user = {};
+          sessionData.user.username = data.name;
+          sessionData.user.password = data.password;
+          sessionData.user.color = result[0].color;
+          console.log(sessionData);
+          console.log("Setting session data:username=%s and password=%s and color=%s", sessionData.user.username, sessionData.user.password, sessionData.user.color );
+
+
+          return socket.emit('successfulLogin', {name:result[0].name,color:result[0].color});
+        }
+      }
+      else return socket.emit('errorLogin');
+      });
+
+    }catch (e) {
+      return console.log('EROOOOOR-LOGIN',e);;
+    }
+  });
+
+  socket.on('settings', function () {
+    socket.emit('settingsGET', {name:sessionData.user.username, color:sessionData.user.color });
+  })
 });

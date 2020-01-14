@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="main.css">
+  <title>Chat by Artem</title>
+</head>
+<body>
+<div class="container">
+  <div id="mainContainer" class="row">
+    <div class="col-12">
+      <nav id="allMsg"></nav>
+
+      <form id="msgForm">
+        <input autocomplete="off" placeholder="Your messege" id="msgText" type="te" class="form-control" >
+        <button type="submit" class="btn btn-danger" value="Send">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<a href="/logout"><h2 class="" >LOGOUT</h2></a>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  $(function(){
+    var socket = io.connect();
+    socket.emit('pushFiveMsgs');
+    socket.emit('settings');
+
+    var globalName, globalcolor;
+
+    var $form = $("#msgForm");
+    var $msgText = $("#msgText");
+    var $allMsg = $("#allMsg");
+    let color;
+    function scrollButtom() {
+      $("#allMsg").stop().animate({ scrollTop: $("#allMsg")[0].scrollHeight}, 1000);
+    }
+
+    $form.submit(function(e) {
+      e.preventDefault();
+      if($msgText.val() != ''){
+        socket.emit('sendMsg', {msg: $msgText.val(), name:globalName, color: globalcolor});
+        $msgText.val('');
+      }
+
+    });
+
+    socket.on('addMsg', function(data) {
+      $allMsg.append("<div style='background-color:"+data.color+"' class='alert'><b>"+data.name+"</b>: "+data.msg+"</div>");
+      scrollButtom();
+    });
+
+    socket.on('cnctMsg', function(data) {
+      $allMsg.append("<div class='alert'><b></b>: connection/div>");
+    });
+
+    socket.on('PFM', function(data) {
+      data.forEach(function (entery) {
+        $allMsg.append("<p style='background-color:"+entery.color+"' class='alert'><b>"+entery.name+"</b>: "+entery.msg+"</p>");
+      });
+      scrollButtom();
+    });
+
+    socket.on('settingsGET', function(data) {
+      globalName = data.name;
+      globalcolor = data.color;
+    })
+    socket.on('successfulLogin', function (data) {
+      globalName = data.name;
+      globalcolor= data.color;
+      $msgText.focus();
+      console.log('fdsfds');
+    });
+
+  });
+</script>
+
+</body>
+</html>

@@ -10,22 +10,25 @@
 </head>
 <body>
   <div class="container main">
-    <!-- <div class="py-5" ></div> -->
 
-    <div id="login" class="row">
-      <input autocomplete="off" placeholder="Your name" id="name" class="form-control" type="text">
-      <button id="loginBtn" type="button" class="btn btn-danger" value="Send">Send</button>
-    </div>
+    <div id="auth" class="row">
 
-    <div id="mainContainer" class="row">
-    <div class="col-12">
-      <nav id="allMsg"></nav>
+      <div class="col-6">
+        <h3>LOGIN</h3>
+        <input autocomplete="off" placeholder="Your name" class="form-control nameLogin" type="text">
+        <input autocomplete="off" placeholder="Your name" class="form-control passwordLogin" type="text">
+        <button type="button" class="btn btn-danger btnLogin" value="Send">Send</button>
+        <div class="errorLogin"></div>
+      </div>
+      <div class="col-6">
+        <h3>REG</h3>
+        <input autocomplete="off" placeholder="Your name" class="form-control nameReg" type="text">
+        <input autocomplete="off" placeholder="Password" class="form-control passwordReg" type="password">
+        <input autocomplete="off" placeholder="Confirm password" class="form-control passwordConfirmReg" type="password">
+        <button type="button" class="btn btn-danger btnReg" value="Send">Send</button>
+        <div class="errorReg"></div>
+      </div>
 
-      <form id="msgForm">
-        <input autocomplete="off" placeholder="Your messege" id="msgText" type="te" class="form-control" >
-        <button type="submit" class="btn btn-danger" value="Send">Send</button>
-      </form>
-    </div>
     </div>
 
   </div>
@@ -40,7 +43,7 @@
     }
 
 
-    var color = 'rgba('+random()+', '+random()+', '+random()+', 0.5)';
+
     // var ip;
     // $.getJSON('https://api.ipify.org?format=json', data => {
     //   ip = data.ip;
@@ -50,53 +53,54 @@
 
       var socket = io.connect();
 
-      var $loginBtn = $("#loginBtn");
-      var $form = $("#msgForm");
-      var $name = $("#name");
-      var $msgText = $("#msgText");
-      var $allMsg = $("#allMsg");
+      var globalName, globalcolor;
 
+      var $btnLogin = $(".btnLogin");
+      var $btnReg = $(".btnReg");
+      var $nameReg = $(".nameReg");
+      var $nameLogin = $(".nameLogin");
+      let color;
       function scrollButtom() {
         $("#allMsg").stop().animate({ scrollTop: $("#allMsg")[0].scrollHeight}, 1000);
       }
 
 
-      $loginBtn.on('click', function () {
-        if($('#name').val() != ''){
-          socket.emit('pushFiveMsgs');
-          name = $('#name').val();
-          $('#login').hide();
-          $('#mainContainer').show();
-          $msgText.focus();
-          socket.emit('reg', {name:name, color:color });
+      $btnLogin.on('click', function () {
+        if($nameLogin != '' && $('.passwordLogin' != '')){
+          socket.emit('login', {name:$nameLogin.val(), password:$('.passwordLogin').val() });
         }
       });
 
-      $form.submit(function(e) {
-				e.preventDefault();
-        if($msgText.val() != ''){
-          socket.emit('sendMsg', {msg: $msgText.val(), name:$name.val(), color: color});
-          $msgText.val('');
+      socket.on('successfulLogin', function (data) {
+        location.replace("http://localhost:3000/chatMain.html");
+      });
+      socket.on('errorLogin', function () {
+        $('.errorLogin').html('Invalid password or name');
+      });
+
+
+
+      $btnReg.on('click', function () {
+        if($nameReg.val() != ''){
+          if ($('.passwordReg').val() != '' && $('.passwordConfirmReg').val() != ''){
+            color = 'rgba('+random()+', '+random()+', '+random()+', 0.5)';
+            if ($('.passwordReg').val() == $('.passwordConfirmReg').val()){
+              socket.emit('regCheck', {name:$nameReg.val(), password:$('.passwordReg').val(), color: color});
+
+            }else{
+              $('.errorReg').html('Invalid password');
+            }
+          }else{$('.errorReg').html('No password');}
+        }else{
+            $('.errorReg').html('No name');
         }
-
       });
-
-      socket.on('addMsg', function(data) {
-        $allMsg.append("<div style='background-color:"+data.color+"' class='alert'><b>"+data.name+"</b>: "+data.msg+"</div>");
-        scrollButtom();
+      socket.on('successfulReg', () => {
+        location.replace("http://localhost:3000/chatMain.html");
       });
-
-      socket.on('cnctMsg', function(data) {
-        $allMsg.append("<div class='alert'><b></b>: connection/div>");
+      socket.on('errorReg', () => {
+        $('.errorReg').html('User exist');
       });
-
-      socket.on('PFM', function(data) {
-        data.forEach(function (entery) {
-          $allMsg.append("<p style='background-color:"+entery.color+"' class='alert'><b>"+entery.name+"</b>: "+entery.msg+"</p>");
-        });
-        scrollButtom();
-      });
-
 
 
     });
