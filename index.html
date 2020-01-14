@@ -72,7 +72,7 @@
       });
 
       socket.on('successfulLogin', function (data) {
-        // location.replace(document.location.host + '/chatMain.html');
+        // location.replace("http://localhost:3000/chatMain.html");
         location.replace('http://193.164.150.199:3000/chatMain.html');
       });
       socket.on('errorLogin', function () {
@@ -97,7 +97,7 @@
         }
       });
       socket.on('successfulReg', () => {
-        // location.replace(document.location.host + '/chatMain.html');
+        // location.replace("http://localhost:3000/chatMain.html");
         location.replace('http://193.164.150.199:3000/chatMain.html');
 
       });

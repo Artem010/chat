@@ -1,6 +1,8 @@
 var express = require ('express');
 var session = require('express-session');
 
+var crypto = require('crypto');
+
 var app = express();
 var mysql = require('mysql2');
 const promise = require('promise');
@@ -83,7 +85,7 @@ function addMsgDB(name, msg) {
 function regUserDB(name, password, color) {
 
   let sqlINSERT = "INSERT INTO users(name, password, color) VALUES (?, ?, ?)";
-  connection.query(sqlINSERT, [name, password, color], function (err, result) {
+  connection.query(sqlINSERT, [name, hash(password), color], function (err, result) {
     if (err) return console.log('ОШИБККА: ',err);
     console.log("User registered");
   });
@@ -116,15 +118,6 @@ function allMsgDB() {
   });
 }
 
-function auth(name, pass) {
-  let sqlSELECT = "SELECT * FROM users WHERE name=? AND password=?";
-  connection.query(sqlSELECT, [name, pass], function (err, result) {
-    if (err) return console.log('ОШИБККА: ',err);
-    console.log(result);
-
-
-  });
-}
 
 async function regDB (name, pass) {
 
@@ -234,6 +227,10 @@ io.sockets.on('connection', function(socket) {
 
       if(result == ''){
         regUserDB(data.name, data.password, data.color);
+        sessionData.user = {};
+        sessionData.user.username = data.name;
+        sessionData.user.password = data.password;
+        sessionData.user.color = data.color;
         console.log('Ok');
         return socket.emit('successfulReg');
       }
@@ -249,10 +246,10 @@ io.sockets.on('connection', function(socket) {
   socket.on('login', async function (data) {
     try {
       let sqlSELECT = "SELECT * FROM users WHERE name=? AND password=?";
-      connection.query(sqlSELECT, [data.name, data.password], (err, result) => {
+      connection.query(sqlSELECT, [data.name, hash(data.password)], (err, result) => {
       console.log(result);
       if(result != ''){
-        if (result[0].name == data.name && result[0].password == data.password){
+        if (result[0].name == data.name && result[0].password == hash(data.password)){
           console.log('User is Login!');
           // console.log(sessionData);
           sessionData.user = {};
@@ -264,6 +261,8 @@ io.sockets.on('connection', function(socket) {
 
 
           return socket.emit('successfulLogin', {name:result[0].name,color:result[0].color});
+        }else{
+          console.log("ERRRROOR0000000000");
         }
       }
       else return socket.emit('errorLogin');
@@ -278,3 +277,8 @@ io.sockets.on('connection', function(socket) {
     socket.emit('settingsGET', {name:sessionData.user.username, color:sessionData.user.color });
   })
 });
+
+function hash(text) {
+	return crypto.createHash('sha1')
+	.update(text).digest('base64')
+}

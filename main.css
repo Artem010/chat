@@ -1,5 +1,5 @@
 #allMsg{
-  max-height: calc(100vh - 3rem);
+  max-height: calc(100vh - 5rem);
   overflow-y: auto;
   /* overflow-y: scroll; */
   /* height: 95vh;
