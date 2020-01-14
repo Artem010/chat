@@ -72,7 +72,7 @@
       });
 
       socket.on('successfulLogin', function (data) {
-        location.replace("http://localhost:3000/chatMain.html");
+        location.replace(__dirname + '/chatMain.html');
       });
       socket.on('errorLogin', function () {
         $('.errorLogin').html('Invalid password or name');
@@ -96,7 +96,7 @@
         }
       });
       socket.on('successfulReg', () => {
-        location.replace("http://localhost:3000/chatMain.html");
+        location.replace(__dirname + '/chatMain.html');
       });
       socket.on('errorReg', () => {
         $('.errorReg').html('User exist');
