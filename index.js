@@ -176,6 +176,7 @@ app.get('/logout', function(requset, respons) {
 });
 
 app.get('/chatMain.html', function(requset, respons) {
+  console.log(requset.session.user);
   if(requset.session.user){
     respons.sendFile(__dirname + '/chatMain.html');
   }
