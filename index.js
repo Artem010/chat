@@ -150,14 +150,13 @@ async function regDB (name, pass) {
 app.get('/', function(requset, respons) {
   respons.sendFile(__dirname + '/index.html');
 
-  console.log('start APPGET = ',sessionData);
+  console.log('START session = ',requset.session);
   if (requset.session.user) {
     console.log("LOGIN session data:username=%s and password=%s and color=%s", sessionData.user.username, sessionData.user.password, sessionData.user.color );
     return respons.redirect('/chatMain.html');
   }
   else{
     sessionData = requset.session;
-
   }
 
 });
@@ -227,7 +226,7 @@ io.sockets.on('connection', function(socket) {
 
       if(result == ''){
         regUserDB(data.name, data.password, data.color);
-        sessionData.user = {};
+        sessionData.user.append({});
         sessionData.user.username = data.name;
         sessionData.user.password = data.password;
         sessionData.user.color = data.color;
