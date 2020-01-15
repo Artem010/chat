@@ -226,7 +226,7 @@ io.sockets.on('connection', function(socket) {
 
       if(result == ''){
         regUserDB(data.name, data.password, data.color);
-        sessionData.user.append({});
+        sessionData.user = {};
         sessionData.user.username = data.name;
         sessionData.user.password = data.password;
         sessionData.user.color = data.color;
